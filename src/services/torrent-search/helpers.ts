@@ -9,7 +9,7 @@ export function formatMagnet(infoHash: string, name: string, trackers: string[])
 }
 
 const defaultHeaders = {
-    'User-Agent': `torrent-stream-server (+https://github.com/KiraLT/torrent-stream-server)`,
+    'User-Agent': `torrent-stream-server (+https://github.com/dasunpamod/torrent-stream-server/)`,
 }
 
 export async function loadPage(url: string): Promise<Response> {
