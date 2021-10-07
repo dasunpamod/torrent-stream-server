@@ -1,6 +1,12 @@
-import { Provider, ProviderSearchOptions, ProviderMeta, ProviderTorrent } from '.'
+import { formatBytes } from 'common-stuff'
+
+import {
+    Provider,
+    ProviderSearchOptions,
+    ProviderMeta,
+    ProviderTorrent,
+} from '.'
 import { formatMagnet, loadJson } from '../helpers'
-import { formatBytes } from '../../../helpers'
 
 export interface TorrentParadiseItem {
     id: string
@@ -11,23 +17,28 @@ export interface TorrentParadiseItem {
 }
 
 export class TorrentParadiseProvider extends Provider {
-    static providerName = 'TorrentParadise.ml' as const
+    providerName = 'TorrentParadise.ml' as const
 
     protected domain: string = 'https://torrent-paradise.ml'
 
     async getMeta(): Promise<ProviderMeta> {
         return {
+            provider: this.providerName,
             categories: [],
         }
     }
 
-    async search(query: string, options?: ProviderSearchOptions): Promise<ProviderTorrent[]> {
+    async search(
+        query: string,
+        options?: ProviderSearchOptions
+    ): Promise<ProviderTorrent[]> {
         const {} = options || {}
 
         const url = `${this.domain}/api/search?q=${encodeURIComponent(query)}`
         const result = await loadJson<TorrentParadiseItem[]>(url)
 
         return result.map((v) => ({
+            provider: this.providerName,
             id: v.id,
             name: v.text,
             magnet: formatMagnet(v.id, v.text, []),
@@ -39,9 +50,5 @@ export class TorrentParadiseProvider extends Provider {
                 id: '',
             },
         }))
-    }
-
-    public async getMagnet(): Promise<string> {
-        throw new Error('')
     }
 }

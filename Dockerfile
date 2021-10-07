@@ -8,8 +8,9 @@ RUN npm ci --ignore-scripts
 COPY frontend/package*.json frontend/
 RUN npm ci --prefix frontend/
 
-COPY tsconfig.json ./
+COPY tsconfig.json openapi.yaml ./
 COPY src/ src/
+COPY spec/ spec/
 RUN npm run build-backend
 RUN npm run test
 

@@ -1,6 +1,7 @@
-import { Provider, ProviderSearchOptions } from '.'
+import { formatBytes } from 'common-stuff'
+
+import { Provider, ProviderSearchOptions, ProviderTorrent } from '.'
 import { formatMagnet, loadJson } from '../helpers'
-import { formatBytes } from '../../../helpers'
 
 export interface ThepiratebayItem {
     id: string
@@ -18,7 +19,7 @@ export interface ThepiratebayItem {
 }
 
 export class ThepiratebayProvider extends Provider {
-    static providerName = 'ThePirateBay' as const
+    providerName = 'ThePirateBay' as const
 
     protected domain: string = 'https://apibay.org'
 
@@ -34,6 +35,7 @@ export class ThepiratebayProvider extends Provider {
 
     async getMeta() {
         return {
+            provider: this.providerName,
             categories: [
                 {
                     name: 'Audio',
@@ -251,14 +253,21 @@ export class ThepiratebayProvider extends Provider {
         }
     }
 
-    async search(query: string, options?: ProviderSearchOptions) {
+    async search(
+        query: string,
+        options?: ProviderSearchOptions
+    ): Promise<ProviderTorrent[]> {
         const { category, limit } = options || {}
 
-        const url = `${this.domain}/q.php?q=${encodeURIComponent(query)}&cat=${encodeURIComponent(
-            category || ''
-        )}`
+        const url = `${this.domain}/q.php?q=${encodeURIComponent(
+            query
+        )}&cat=${encodeURIComponent(category || '')}`
 
         const result = await loadJson<ThepiratebayItem[]>(url)
+
+        if (result[0]?.name === 'No results returned') {
+            return []
+        }
 
         const categories = (await this.getMeta()).categories.flatMap((v) => [
             ...v.subcategories,
@@ -269,6 +278,7 @@ export class ThepiratebayProvider extends Provider {
         ])
 
         return result.map((v) => ({
+            provider: this.providerName,
             id: v.id,
             name: v.name,
             magnet: formatMagnet(v.info_hash, v.name, this.trackers),

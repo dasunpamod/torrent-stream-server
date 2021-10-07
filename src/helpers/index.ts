@@ -1,28 +1,17 @@
 import { sign, verify } from 'jsonwebtoken'
 
+import { getRouteUrl } from './openapi'
+
 export function exists(json: any, key: string) {
     const value = json[key]
     return value !== null && value !== undefined
 }
 
 export function mapValues(data: any, fn: (item: any) => any) {
-    return Object.keys(data).reduce((acc, key) => ({ ...acc, [key]: fn(data[key]) }), {})
-}
-
-export function merge(current: any, update: any): any {
-    current = { ...current }
-    Object.keys(update).forEach(function (key) {
-        if (
-            current.hasOwnProperty(key) &&
-            typeof current[key] === 'object' &&
-            !(current[key] instanceof Array)
-        ) {
-            current[key] = merge(current[key], update[key])
-        } else {
-            current[key] = update[key]
-        }
-    })
-    return current
+    return Object.keys(data).reduce(
+        (acc, key) => ({ ...acc, [key]: fn(data[key]) }),
+        {}
+    )
 }
 
 export function signJwtToken(data: object | string, key: string): string {
@@ -44,45 +33,53 @@ export function verifyJwtToken<T extends object | string>(
     }
 }
 
-export function formatBytes(bytes: number, decimals: number = 2): string {
-    if (bytes === 0) return '0 Bytes'
-
-    const k = 1024
-    const dm = decimals < 0 ? 0 : decimals
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
-}
-
-export function getSteamUrl(torrent: string, file: string, encodeToken?: string): string {
+export function getSteamUrl(
+    torrent: string,
+    file?: string,
+    encodeToken?: string,
+    output?: 'zip'
+): string {
     if (encodeToken) {
-        return `/stream/${encodeURIComponent(
-            signJwtToken(
-                {
-                    torrent,
-                    file,
-                },
-                encodeToken
-            )
-        )}`
+        return getRouteUrl(
+            'getStream',
+            {
+                torrent: signJwtToken(
+                    {
+                        torrent,
+                        file,
+                        output,
+                    },
+                    encodeToken
+                ),
+            },
+            {}
+        )
     }
 
-    return `/stream/${encodeURIComponent(torrent)}?file=${encodeURIComponent(file)}`
+    return getRouteUrl(
+        'getStream',
+        {
+            torrent,
+        },
+        { file, output }
+    )
 }
 
 export function getPlaylistUrl(torrent: string, encodeToken?: string): string {
     if (encodeToken) {
-        return `/playlist/${encodeURIComponent(
-            signJwtToken(
-                {
-                    torrent,
-                },
-                encodeToken
-            )
-        )}`
+        return getRouteUrl(
+            'getPlaylist',
+            {
+                torrent: signJwtToken(
+                    {
+                        torrent,
+                    },
+                    encodeToken
+                ),
+            },
+            {}
+        )
     }
 
-    return `/playlist/${encodeURIComponent(torrent)}`
+    return getRouteUrl('getPlaylist', { torrent }, {})
 }

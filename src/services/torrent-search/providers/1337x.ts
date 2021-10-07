@@ -1,11 +1,16 @@
-import { Provider, ProviderSearchOptions, ProviderMeta, ProviderTorrent } from '.'
+import {
+    Provider,
+    ProviderSearchOptions,
+    ProviderMeta,
+    ProviderTorrent,
+} from '.'
 import { crawlPage } from '../helpers'
 
 export class X1337Provider extends Provider {
-    static providerName = '1337x' as const
+    providerName = '1337x' as const
     protected domain: string = 'https://www.1337x.to'
 
-    trackers = [
+    protected trackers = [
         'udp://tracker.coppersurfer.tk:6969/announce',
         'udp://9.rarbg.to:2920/announce',
         'udp://tracker.opentrackr.org:1337',
@@ -17,6 +22,7 @@ export class X1337Provider extends Provider {
 
     async getMeta(): Promise<ProviderMeta> {
         return {
+            provider: this.providerName,
             categories: [
                 {
                     name: 'Movies',
@@ -67,13 +73,16 @@ export class X1337Provider extends Provider {
         }
     }
 
-    async search(query: string, options?: ProviderSearchOptions): Promise<ProviderTorrent[]> {
+    async search(
+        query: string,
+        options?: ProviderSearchOptions
+    ): Promise<ProviderTorrent[]> {
         const { category, limit } = options || {}
 
         const url = category
-            ? `${this.domain}/category-search/${encodeURIComponent(query)}/${encodeURIComponent(
-                  category || ''
-              )}/1/`
+            ? `${this.domain}/category-search/${encodeURIComponent(
+                  query
+              )}/${encodeURIComponent(category || '')}/1/`
             : `${this.domain}/search/${encodeURIComponent(query)}/1/`
 
         const { $ } = await crawlPage(url)
@@ -83,19 +92,26 @@ export class X1337Provider extends Provider {
             .map((v) => {
                 const el = $(v)
 
-                const id = (el.find('a:nth-child(2)').attr('href') || '').split('/')[2] || ''
+                const id =
+                    (el.find('a:nth-child(2)').attr('href') || '').split(
+                        '/'
+                    )[2] || ''
 
                 // Fix strange HTML
                 el.find('.size .seeds').remove()
 
                 return {
+                    provider: this.providerName,
                     id,
                     name: el.find('a').text().trim(),
                     seeds: parseInt(el.find('.seeds').text().trim(), 10) || 0,
                     peers: parseInt(el.find('.leeches').text().trim(), 10) || 0,
-                    comments: parseInt(el.find('.comments').text().trim(), 10) || 0,
+                    comments:
+                        parseInt(el.find('.comments').text().trim(), 10) || 0,
                     size: el.find('.size').text().trim(),
-                    time: this.parseDate(el.find('.coll-date').text().trim()).getTime(),
+                    time: this.parseDate(
+                        el.find('.coll-date').text().trim()
+                    ).getTime(),
                     link: this.domain + el.find('a:nth-child(2)').attr('href'),
                 }
             })
@@ -117,7 +133,11 @@ export class X1337Provider extends Provider {
 
     protected parseDate(value: string): Date {
         return new Date(
-            value.replace(`'`, '20').replace('th', '').replace('st', '').replace('rd', '')
+            value
+                .replace(`'`, '20')
+                .replace('th', '')
+                .replace('st', '')
+                .replace('rd', '')
         )
     }
 }
